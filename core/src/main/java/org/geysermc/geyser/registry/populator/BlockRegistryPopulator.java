@@ -37,12 +37,17 @@ import org.cloudburstmc.blockstateupdater.BlockStateUpdater;
 import org.cloudburstmc.blockstateupdater.BlockStateUpdater_1_20_10;
 import org.cloudburstmc.blockstateupdater.BlockStateUpdater_1_20_30;
 import org.cloudburstmc.blockstateupdater.BlockStateUpdater_1_20_40;
+import org.cloudburstmc.blockstateupdater.BlockStateUpdater_1_20_50;
 import org.cloudburstmc.blockstateupdater.util.tagupdater.CompoundTagUpdaterContext;
-import org.cloudburstmc.nbt.*;
+import org.cloudburstmc.nbt.NBTInputStream;
+import org.cloudburstmc.nbt.NbtMap;
+import org.cloudburstmc.nbt.NbtMapBuilder;
+import org.cloudburstmc.nbt.NbtType;
 import org.cloudburstmc.protocol.bedrock.codec.v589.Bedrock_v589;
 import org.cloudburstmc.protocol.bedrock.codec.v594.Bedrock_v594;
 import org.cloudburstmc.protocol.bedrock.codec.v618.Bedrock_v618;
 import org.cloudburstmc.protocol.bedrock.codec.v622.Bedrock_v622;
+import org.cloudburstmc.protocol.bedrock.codec.v630.Bedrock_v630;
 import org.cloudburstmc.protocol.bedrock.data.BlockPropertyData;
 import org.cloudburstmc.protocol.bedrock.data.definitions.BlockDefinition;
 import org.geysermc.geyser.GeyserImpl;
@@ -120,12 +125,14 @@ public final class BlockRegistryPopulator {
         Remapper mapper594 = Remapper.of(BlockStateUpdater_1_20_10.INSTANCE);
         Remapper mapper618 = Remapper.of(BlockStateUpdater_1_20_10.INSTANCE, BlockStateUpdater_1_20_30.INSTANCE);
         Remapper mapper622 = Remapper.of(BlockStateUpdater_1_20_10.INSTANCE, BlockStateUpdater_1_20_30.INSTANCE, BlockStateUpdater_1_20_40.INSTANCE);
+        Remapper mapper630 = Remapper.of(BlockStateUpdater_1_20_10.INSTANCE, BlockStateUpdater_1_20_30.INSTANCE, BlockStateUpdater_1_20_40.INSTANCE, BlockStateUpdater_1_20_50.INSTANCE);
 
         var blockMappers = ImmutableMap.<ObjectIntPair<String>, Remapper>builder()
                 .put(ObjectIntPair.of("1_20_0", Bedrock_v589.CODEC.getProtocolVersion()), tag -> tag)
                 .put(ObjectIntPair.of("1_20_10", Bedrock_v594.CODEC.getProtocolVersion()), mapper594)
                 .put(ObjectIntPair.of("1_20_30", Bedrock_v618.CODEC.getProtocolVersion()), mapper618)
                 .put(ObjectIntPair.of("1_20_40", Bedrock_v622.CODEC.getProtocolVersion()), mapper622)
+                .put(ObjectIntPair.of("1_20_50", Bedrock_v630.CODEC.getProtocolVersion()), mapper630)
                 .build();
 
         // We can keep this strong as nothing should be garbage collected
@@ -214,6 +221,7 @@ public final class BlockRegistryPopulator {
 
             GeyserBedrockBlock airDefinition = null;
             BlockDefinition commandBlockDefinition = null;
+            BlockDefinition mobSpawnerBlockDefinition = null;
             BlockDefinition waterDefinition = null;
             BlockDefinition movingBlockDefinition = null;
             Iterator<Map.Entry<String, JsonNode>> blocksIterator = BLOCKS_JSON.fields();
@@ -262,6 +270,7 @@ public final class BlockRegistryPopulator {
                     case "minecraft:air" -> airDefinition = bedrockDefinition;
                     case "minecraft:water[level=0]" -> waterDefinition = bedrockDefinition;
                     case "minecraft:command_block[conditional=false,facing=north]" -> commandBlockDefinition = bedrockDefinition;
+                    case "minecraft:spawner" -> mobSpawnerBlockDefinition = bedrockDefinition;
                     case "minecraft:moving_piston[facing=north,type=normal]" -> movingBlockDefinition = bedrockDefinition;
                 }
 
@@ -291,8 +300,12 @@ public final class BlockRegistryPopulator {
             if (commandBlockDefinition == null) {
                 throw new AssertionError("Unable to find command block in palette");
             }
-
             builder.commandBlock(commandBlockDefinition);
+
+            if (mobSpawnerBlockDefinition == null) {
+                throw new AssertionError("Unable to find mob spawner block in palette");
+            }
+            builder.mobSpawnerBlock(mobSpawnerBlockDefinition);
 
             if (waterDefinition  == null) {
                 throw new AssertionError("Unable to find water in palette");
