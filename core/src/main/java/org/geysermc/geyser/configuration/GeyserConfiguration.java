@@ -56,6 +56,7 @@ public interface GeyserConfiguration {
     @Deprecated
     Map<String, ? extends IUserAuthenticationInfo> getUserAuths();
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     boolean isCommandSuggestions();
 
     @JsonIgnore
@@ -97,6 +98,7 @@ public interface GeyserConfiguration {
 
     boolean isForceResourcePacks();
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     boolean isXboxAchievementsEnabled();
 
     int getCacheImages();
